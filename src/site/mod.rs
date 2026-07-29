@@ -27,6 +27,7 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
     if years.is_empty() {
         bail!("cannot generate a site without any years");
     }
+    let templates = template::Templates::load(root)?;
 
     let temp = Builder::new()
         .prefix(".ygo-wcs-lf-site-")
@@ -56,7 +57,7 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
             .with_context(|| format!("failed to copy limit-list PDF for {year}"))?;
         fs::write(
             year_directory.join("index.html"),
-            template::viewer(year),
+            templates.viewer(year)?,
         )
         .with_context(|| format!("failed to write site viewer for {year}"))?;
         site_years.push(SiteYear {
@@ -66,7 +67,7 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
     }
 
     site_years.sort_by_key(|entry| std::cmp::Reverse(entry.year));
-    fs::write(staged.join("index.html"), template::index(&site_years))
+    fs::write(staged.join("index.html"), templates.index(&site_years)?)
         .context("failed to write site index")?;
     install(&staged, &root.join(OUTPUT), temp.path())?;
 
@@ -99,7 +100,10 @@ fn install(staged: &Path, destination: &Path, temp: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use std::{
+        fs,
+        path::Path,
+    };
 
     use tempfile::tempdir;
 
@@ -108,9 +112,7 @@ mod tests {
     #[test]
     fn assembles_index_and_viewers() {
         let temp = tempdir().unwrap();
-        let stylesheet = temp.path().join("site/assets/site.css");
-        fs::create_dir_all(stylesheet.parent().unwrap()).unwrap();
-        fs::write(&stylesheet, "body { color: white; }").unwrap();
+        write_site_sources(temp.path());
         for year in [2025, 2026] {
             let directory = temp.path().join(year.to_string()).join("lf");
             fs::create_dir_all(&directory).unwrap();
@@ -147,8 +149,26 @@ mod tests {
     #[test]
     fn rejects_missing_pdf() {
         let temp = tempdir().unwrap();
+        write_site_sources(temp.path());
 
         assert!(generate_at(temp.path(), &[2026]).is_err());
         assert!(!temp.path().join("public").exists());
+    }
+
+    fn write_site_sources(root: &Path) {
+        let site = root.join("site");
+        fs::create_dir_all(site.join("assets")).unwrap();
+        fs::write(site.join("assets/site.css"), "body { color: white; }").unwrap();
+        fs::write(site.join("index.html"), "{{cards}}").unwrap();
+        fs::write(
+            site.join("year-card.html"),
+            "<h2>{{year}}</h2><a href=\"{{year}}/index.html\">{{size}}</a>",
+        )
+        .unwrap();
+        fs::write(
+            site.join("viewer.html"),
+            "<iframe src=\"./lf.pdf#view=FitH\" title=\"{{year}}\"></iframe>",
+        )
+        .unwrap();
     }
 }
