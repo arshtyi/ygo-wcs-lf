@@ -25,17 +25,17 @@ struct SortKey {
     details: Vec<String>,
 }
 
-pub(super) struct CardDatabase {
+pub(crate) struct CardDatabase {
     cards: HashMap<u32, Card>,
 }
 
 impl CardDatabase {
-    pub(super) fn load(path: &Path) -> Result<Self> {
+    pub(crate) fn load(path: &Path) -> Result<Self> {
         let json = fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
         Self::from_json(&json).with_context(|| format!("invalid card data in {}", path.display()))
     }
 
-    pub(super) fn sort_ids(&self, ids: &mut [u32]) -> Result<()> {
+    pub(crate) fn sort_ids(&self, ids: &mut [u32]) -> Result<()> {
         let keys = ids
             .iter()
             .map(|id| Ok((*id, self.sort_key(*id)?)))
@@ -45,7 +45,7 @@ impl CardDatabase {
         Ok(())
     }
 
-    pub(super) fn image_id(&self, id: u32) -> Result<u32> {
+    pub(crate) fn image_id(&self, id: u32) -> Result<u32> {
         self.card(id)?
             .image
             .ok_or_else(|| anyhow::anyhow!("card {id} has no image ID"))

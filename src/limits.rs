@@ -6,18 +6,18 @@ use std::{
 
 use anyhow::{Context, Result};
 
-use super::cards::CardDatabase;
+use crate::prepare::cards::CardDatabase;
 
 type Groups = [[Vec<u32>; 3]; 2];
 
-pub(super) struct YearLimits {
+pub(crate) struct YearLimits {
     year: u16,
     path: PathBuf,
     groups: Groups,
 }
 
 impl YearLimits {
-    pub(super) fn sort(&mut self, cards: &CardDatabase) -> Result<()> {
+    pub(crate) fn sort(&mut self, cards: &CardDatabase) -> Result<()> {
         for group in self.groups.iter_mut().flatten() {
             cards
                 .sort_ids(group)
@@ -26,7 +26,7 @@ impl YearLimits {
         Ok(())
     }
 
-    pub(super) fn write(&self) -> Result<()> {
+    pub(crate) fn write(&self) -> Result<()> {
         let mut json =
             serde_json::to_vec_pretty(&self.groups).context("failed to encode sorted limits")?;
         json.push(b'\n');
@@ -34,7 +34,7 @@ impl YearLimits {
             .with_context(|| format!("failed to write {}", self.path.display()))
     }
 
-    pub(super) fn ids(&self) -> impl Iterator<Item = u32> + '_ {
+    pub(crate) fn ids(&self) -> impl Iterator<Item = u32> + '_ {
         self.groups
             .iter()
             .flatten()
@@ -43,7 +43,7 @@ impl YearLimits {
     }
 }
 
-pub(super) fn load_years(years: &[u16]) -> Result<Vec<YearLimits>> {
+pub(crate) fn load_years(years: &[u16]) -> Result<Vec<YearLimits>> {
     years
         .iter()
         .copied()

@@ -21,6 +21,12 @@ pub(crate) enum Command {
         #[arg(required = true, num_args = 1..)]
         years: Vec<u16>,
     },
+    /// Render card previews and limit-list PDFs for one or more years.
+    Render {
+        /// One or more World Championship years.
+        #[arg(required = true, num_args = 1..)]
+        years: Vec<u16>,
+    },
 }
 
 #[cfg(test)]
@@ -51,6 +57,16 @@ mod tests {
         assert!(matches!(
             cli.command,
             Command::Prepare { years } if years == [2025, 2026]
+        ));
+    }
+
+    #[test]
+    fn parses_render_subcommand_with_multiple_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "render", "2025", "2026"]).unwrap();
+
+        assert!(matches!(
+            cli.command,
+            Command::Render { years } if years == [2025, 2026]
         ));
     }
 }
