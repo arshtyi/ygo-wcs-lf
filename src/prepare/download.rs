@@ -9,6 +9,8 @@ use tokio::{
 };
 
 const ATTEMPTS: u8 = 3;
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(30);
+const READ_TIMEOUT: Duration = Duration::from_secs(120);
 
 pub(super) struct Downloader {
     client: reqwest::Client,
@@ -18,7 +20,8 @@ impl Downloader {
     pub(super) fn new() -> Result<Self> {
         let client = reqwest::Client::builder()
             .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
-            .timeout(Duration::from_secs(120))
+            .connect_timeout(CONNECT_TIMEOUT)
+            .read_timeout(READ_TIMEOUT)
             .build()
             .context("failed to build download client")?;
 
