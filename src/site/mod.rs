@@ -114,8 +114,8 @@ mod tests {
         generate_at(temp.path(), &[2025, 2026]).unwrap();
 
         let index = fs::read_to_string(temp.path().join("public/index.html")).unwrap();
-        let year_2025 = index.find("2025 World Championship").unwrap();
-        let year_2026 = index.find("2026 World Championship").unwrap();
+        let year_2025 = index.find("<h2>2025</h2>").unwrap();
+        let year_2026 = index.find("<h2>2026</h2>").unwrap();
         assert!(year_2026 < year_2025);
         assert!(index.contains("2026/lf.pdf"));
         assert!(index.contains("2026/"));
