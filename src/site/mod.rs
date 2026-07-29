@@ -130,7 +130,7 @@ mod tests {
 
         let viewer =
             fs::read_to_string(temp.path().join("public/2026/index.html")).unwrap();
-        assert!(viewer.contains("src=\"./lf.pdf#view=FitH\""));
+        assert!(viewer.contains("src=\"./lf.pdf#zoom=100\""));
         assert!(!viewer.contains("<header"));
         assert!(!viewer.contains("download"));
         assert_eq!(
@@ -167,7 +167,7 @@ mod tests {
         .unwrap();
         fs::write(
             site.join("viewer.html"),
-            "<iframe src=\"./lf.pdf#view=FitH\" title=\"{{year}}\"></iframe>",
+            "<iframe src=\"./lf.pdf#zoom=100\" title=\"{{year}}\"></iframe>",
         )
         .unwrap();
     }
