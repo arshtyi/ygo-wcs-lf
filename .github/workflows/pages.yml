@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "**/*.list"
+      - "site/**"
   workflow_dispatch:
 
 permissions:
