@@ -34,10 +34,14 @@ pub(super) fn extract(
         let target = destination.join(&relative);
         let kind = entry.header().entry_type();
 
+        if is_metadata(kind) {
+            continue;
+        }
+
         if kind.is_dir() {
             fs::create_dir_all(&target)
                 .with_context(|| format!("failed to create {}", target.display()))?;
-        } else if kind.is_file() {
+        } else if kind.is_file() || kind.is_contiguous() {
             if let Some(parent) = target.parent() {
                 fs::create_dir_all(parent)
                     .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -54,6 +58,13 @@ pub(super) fn extract(
     }
 
     Ok(())
+}
+
+fn is_metadata(kind: tar::EntryType) -> bool {
+    kind.is_pax_global_extensions()
+        || kind.is_pax_local_extensions()
+        || kind.is_gnu_longname()
+        || kind.is_gnu_longlink()
 }
 
 fn safe_relative_path(path: &Path) -> Result<PathBuf> {
@@ -80,7 +91,7 @@ fn safe_relative_path(path: &Path) -> Result<PathBuf> {
 mod tests {
     use std::path::{Path, PathBuf};
 
-    use super::safe_relative_path;
+    use super::{is_metadata, safe_relative_path};
 
     #[test]
     fn accepts_normal_relative_paths() {
@@ -94,5 +105,13 @@ mod tests {
     fn rejects_parent_and_absolute_paths() {
         assert!(safe_relative_path(Path::new("../escape")).is_err());
         assert!(safe_relative_path(Path::new("/absolute")).is_err());
+    }
+
+    #[test]
+    fn allows_only_non_filesystem_metadata_entries() {
+        assert!(is_metadata(tar::EntryType::XGlobalHeader));
+        assert!(is_metadata(tar::EntryType::XHeader));
+        assert!(!is_metadata(tar::EntryType::Symlink));
+        assert!(!is_metadata(tar::EntryType::Link));
     }
 }
