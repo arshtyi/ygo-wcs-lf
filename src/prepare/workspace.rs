@@ -65,11 +65,20 @@ pub(super) async fn assemble(downloader: &Downloader) -> Result<PathBuf> {
     }
     fs::copy(&ot_cards, &staged_cards).context("failed to stage OT card data")?;
 
+    preserve_center_images(&destination, &staged)?;
     validate_workspace(&staged)?;
     install(&staged, &destination, temp.path())?;
 
     println!("prepared typst-ygo workspace at {}", destination.display());
     Ok(destination)
+}
+
+fn preserve_center_images(previous: &Path, staged: &Path) -> Result<()> {
+    let previous_images = previous.join("assets/ot/images");
+    if previous_images.is_dir() {
+        copy_tree_contents(&previous_images, &staged.join("assets/ot/images"))?;
+    }
+    Ok(())
 }
 
 fn assets_root(extracted: &Path) -> Result<PathBuf> {
@@ -190,7 +199,7 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use super::{copy_tree_contents, single_directory};
+    use super::{copy_tree_contents, preserve_center_images, single_directory};
 
     #[test]
     fn finds_single_archive_root() {
@@ -214,6 +223,27 @@ mod tests {
         assert_eq!(
             fs::read_to_string(destination.join("nested/file.txt")).unwrap(),
             "value"
+        );
+    }
+
+    #[test]
+    fn preserves_existing_center_images() {
+        let temp = tempdir().unwrap();
+        let previous = temp.path().join("previous");
+        let staged = temp.path().join("staged");
+        fs::create_dir_all(previous.join("assets/ot/images")).unwrap();
+        fs::create_dir_all(staged.join("assets/ot/images")).unwrap();
+        fs::write(
+            previous.join("assets/ot/images/123.jpg"),
+            [0xff, 0xd8],
+        )
+        .unwrap();
+
+        preserve_center_images(&previous, &staged).unwrap();
+
+        assert_eq!(
+            fs::read(staged.join("assets/ot/images/123.jpg")).unwrap(),
+            [0xff, 0xd8]
         );
     }
 }

@@ -32,13 +32,13 @@ pub(super) async fn fetch(
         .map(|image_id| {
             let destination = images_directory.join(format!("{image_id}.jpg"));
             async move {
-                if is_jpeg(&destination) {
+                if is_supported_image(&destination) {
                     return Ok(false);
                 }
 
                 let url = format!("{IMAGE_URL}/{image_id}.jpg");
                 downloader
-                    .download_checked(&url, &destination, validate_jpeg)
+                    .download_checked(&url, &destination, validate_image)
                     .await
                     .with_context(|| format!("failed to download center image {image_id}"))?;
                 Ok(true)
@@ -89,20 +89,22 @@ fn required_image_ids(
         .collect()
 }
 
-fn validate_jpeg(path: &Path) -> Result<()> {
-    if is_jpeg(path) {
+fn validate_image(path: &Path) -> Result<()> {
+    if is_supported_image(path) {
         Ok(())
     } else {
-        bail!("download is not a JPEG")
+        bail!("download is neither JPEG nor PNG")
     }
 }
 
-fn is_jpeg(path: &Path) -> bool {
-    let mut header = [0; 2];
+fn is_supported_image(path: &Path) -> bool {
+    const PNG_HEADER: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
+
+    let mut header = [0; 8];
     File::open(path)
         .and_then(|mut file| file.read_exact(&mut header))
         .is_ok()
-        && header == [0xff, 0xd8]
+        && (header[..2] == [0xff, 0xd8] || header == PNG_HEADER)
 }
 
 #[cfg(test)]
@@ -111,20 +113,23 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use super::{is_jpeg, required_image_ids};
+    use super::{is_supported_image, required_image_ids};
     use crate::prepare::cards::CardDatabase;
 
     #[test]
-    fn recognizes_jpeg_headers() {
+    fn recognizes_jpeg_and_png_headers() {
         let temp = tempdir().unwrap();
         let jpeg = temp.path().join("valid.jpg");
+        let png = temp.path().join("png-with-jpg-extension.jpg");
         let invalid = temp.path().join("invalid.jpg");
-        fs::write(&jpeg, [0xff, 0xd8, 0xff]).unwrap();
+        fs::write(&jpeg, [0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0]).unwrap();
+        fs::write(&png, [0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a]).unwrap();
         fs::write(&invalid, b"not jpeg").unwrap();
 
-        assert!(is_jpeg(&jpeg));
-        assert!(!is_jpeg(&invalid));
-        assert!(!is_jpeg(&temp.path().join("missing.jpg")));
+        assert!(is_supported_image(&jpeg));
+        assert!(is_supported_image(&png));
+        assert!(!is_supported_image(&invalid));
+        assert!(!is_supported_image(&temp.path().join("missing.jpg")));
     }
 
     #[test]
