@@ -10,6 +10,6 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Lf { year } => lf::run(year).await,
+        Command::Lf { years } => lf::run(years).await,
     }
 }

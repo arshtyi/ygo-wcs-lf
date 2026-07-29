@@ -9,10 +9,11 @@ pub(crate) struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum Command {
-    /// Resolve a year's forbidden and limited card lists.
+    /// Resolve forbidden and limited card lists for one or more years.
     Lf {
-        /// World Championship year.
-        year: u16,
+        /// One or more World Championship years.
+        #[arg(required = true, num_args = 1..)]
+        years: Vec<u16>,
     },
 }
 
@@ -23,9 +24,17 @@ mod tests {
     use super::{Cli, Command};
 
     #[test]
-    fn parses_lf_subcommand() {
-        let cli = Cli::try_parse_from(["ygo-wcs-lf", "lf", "2026"]).unwrap();
+    fn parses_lf_subcommand_with_multiple_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "lf", "2025", "2026"]).unwrap();
 
-        assert!(matches!(cli.command, Command::Lf { year: 2026 }));
+        assert!(matches!(
+            cli.command,
+            Command::Lf { years } if years == [2025, 2026]
+        ));
+    }
+
+    #[test]
+    fn requires_at_least_one_year() {
+        assert!(Cli::try_parse_from(["ygo-wcs-lf", "lf"]).is_err());
     }
 }
