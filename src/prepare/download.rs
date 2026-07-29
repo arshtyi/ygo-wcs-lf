@@ -26,6 +26,18 @@ impl Downloader {
     }
 
     pub(super) async fn download(&self, url: &str, destination: &Path) -> Result<()> {
+        self.download_checked(url, destination, |_| Ok(())).await
+    }
+
+    pub(super) async fn download_checked<F>(
+        &self,
+        url: &str,
+        destination: &Path,
+        validate: F,
+    ) -> Result<()>
+    where
+        F: Fn(&Path) -> Result<()>,
+    {
         if let Some(parent) = destination.parent() {
             fs::create_dir_all(parent)
                 .await
@@ -35,7 +47,12 @@ impl Downloader {
         let mut last_error = None;
 
         for attempt in 1..=ATTEMPTS {
-            match self.download_once(url, destination).await {
+            let result = match self.download_once(url, destination).await {
+                Ok(()) => validate(destination),
+                Err(error) => Err(error),
+            };
+
+            match result {
                 Ok(()) => return Ok(()),
                 Err(error) => {
                     last_error = Some(error);

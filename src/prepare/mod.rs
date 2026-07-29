@@ -1,6 +1,7 @@
 mod archive;
 mod cards;
 mod download;
+mod images;
 mod limits;
 mod workspace;
 
@@ -17,6 +18,7 @@ pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
     for limits in &mut limit_lists {
         limits.sort(&cards)?;
     }
+    images::fetch(&downloader, &workspace, &cards, &limit_lists).await?;
     for limits in &limit_lists {
         limits.write()?;
     }
