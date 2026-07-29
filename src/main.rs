@@ -1,5 +1,6 @@
 mod cli;
 mod lf;
+mod prepare;
 
 use anyhow::Result;
 use clap::Parser;
@@ -11,5 +12,6 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Command::Lf { years } => lf::run(years).await,
+        Command::Prepare { years } => prepare::run(years).await,
     }
 }

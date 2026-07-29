@@ -15,6 +15,12 @@ pub(crate) enum Command {
         #[arg(required = true, num_args = 1..)]
         years: Vec<u16>,
     },
+    /// Download resources and sort limit lists for one or more years.
+    Prepare {
+        /// One or more World Championship years.
+        #[arg(required = true, num_args = 1..)]
+        years: Vec<u16>,
+    },
 }
 
 #[cfg(test)]
@@ -36,5 +42,15 @@ mod tests {
     #[test]
     fn requires_at_least_one_year() {
         assert!(Cli::try_parse_from(["ygo-wcs-lf", "lf"]).is_err());
+    }
+
+    #[test]
+    fn parses_prepare_subcommand_with_multiple_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "prepare", "2025", "2026"]).unwrap();
+
+        assert!(matches!(
+            cli.command,
+            Command::Prepare { years } if years == [2025, 2026]
+        ));
     }
 }
