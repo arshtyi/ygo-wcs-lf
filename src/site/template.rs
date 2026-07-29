@@ -95,50 +95,10 @@ h1 {
   color: #fff;
 }
 
-.button[aria-busy="true"] {
-  cursor: wait;
-  opacity: 0.7;
-  pointer-events: none;
-}
-
 .viewer-body {
   height: 100vh;
   overflow: hidden;
   background: #090d12;
-}
-
-.viewer-shell {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
-}
-
-.viewer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #273442;
-  background: #111821;
-}
-
-.viewer-title {
-  min-width: 0;
-}
-
-.viewer-title h1 {
-  overflow: hidden;
-  margin: 0;
-  font-size: 1.1rem;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.back {
-  color: #8eb8d6;
-  font-size: 0.8rem;
 }
 
 .document {
@@ -158,47 +118,6 @@ h1 {
     align-items: flex-start;
     flex-direction: column;
   }
-
-  .viewer-header {
-    padding: 10px;
-  }
-
-  .viewer-header .button {
-    flex: none;
-  }
-}
-"#;
-
-pub(super) const DOWNLOAD_JS: &str = r#"for (const link of document.querySelectorAll("[data-download]")) {
-  link.addEventListener("click", async (event) => {
-    event.preventDefault();
-    const label = link.textContent;
-    link.setAttribute("aria-busy", "true");
-    link.textContent = "下载中";
-
-    try {
-      const response = await fetch(link.href);
-      if (!response.ok) throw new Error(response.statusText);
-      const url = URL.createObjectURL(await response.blob());
-      const download = document.createElement("a");
-      download.href = url;
-      download.download = link.download;
-      document.body.append(download);
-      download.click();
-      download.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch {
-      const download = document.createElement("a");
-      download.href = link.href;
-      download.download = link.download;
-      document.body.append(download);
-      download.click();
-      download.remove();
-    } finally {
-      link.removeAttribute("aria-busy");
-      link.textContent = label;
-    }
-  });
 }
 "#;
 
@@ -215,7 +134,6 @@ pub(super) fn index(years: &[SiteYear]) -> String {
         </div>
         <div class="actions">
           <a class="button primary" href="{year}/index.html">查看</a>
-          <a class="button" href="{year}/lf.pdf" download="{year}-world-championship-limit-list.pdf" data-download>下载</a>
         </div>
       </article>"#,
                 size = file_size(entry.bytes),
@@ -233,7 +151,6 @@ pub(super) fn index(years: &[SiteYear]) -> String {
   <meta name="description" content="游戏王世界锦标赛 OCG / TCG 禁限卡表">
   <title>游戏王世界赛禁限卡表</title>
   <link rel="stylesheet" href="assets/site.css">
-  <script defer src="assets/site.js"></script>
 </head>
 <body>
   <header class="hero shell">
@@ -249,7 +166,7 @@ pub(super) fn index(years: &[SiteYear]) -> String {
     )
 }
 
-pub(super) fn viewer(year: u16, bytes: u64) -> String {
+pub(super) fn viewer(year: u16) -> String {
     format!(
         r#"<!doctype html>
 <html lang="zh-CN">
@@ -259,23 +176,12 @@ pub(super) fn viewer(year: u16, bytes: u64) -> String {
   <meta name="description" content="{year} 游戏王世界锦标赛 OCG / TCG 禁限卡表">
   <title>{year} 世界赛禁限卡表</title>
   <link rel="stylesheet" href="../assets/site.css">
-  <script defer src="../assets/site.js"></script>
 </head>
 <body class="viewer-body">
-  <main class="viewer-shell">
-    <header class="viewer-header">
-      <div class="viewer-title">
-        <a class="back" href="../">全部年份</a>
-        <h1>{year} 世界赛禁限卡表</h1>
-      </div>
-      <a class="button primary" href="./lf.pdf" download="{year}-world-championship-limit-list.pdf" data-download>下载 · {size}</a>
-    </header>
-    <iframe class="document" src="./lf.pdf#view=FitH" title="{year} 世界赛禁限卡表"></iframe>
-  </main>
+  <iframe class="document" src="./lf.pdf#view=FitH" title="{year} 世界赛禁限卡表"></iframe>
 </body>
 </html>
-"#,
-        size = file_size(bytes),
+"#
     )
 }
 

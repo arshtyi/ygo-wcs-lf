@@ -35,8 +35,6 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
     let assets = staged.join("assets");
     fs::create_dir_all(&assets).context("failed to create staged site assets")?;
     fs::write(assets.join("site.css"), template::CSS).context("failed to write site stylesheet")?;
-    fs::write(assets.join("site.js"), template::DOWNLOAD_JS)
-        .context("failed to write site script")?;
     fs::write(staged.join(".nojekyll"), []).context("failed to write .nojekyll")?;
 
     let mut site_years = Vec::with_capacity(years.len());
@@ -55,7 +53,7 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
             .with_context(|| format!("failed to copy limit-list PDF for {year}"))?;
         fs::write(
             year_directory.join("index.html"),
-            template::viewer(year, metadata.len()),
+            template::viewer(year),
         )
         .with_context(|| format!("failed to write site viewer for {year}"))?;
         site_years.push(SiteYear {
@@ -105,7 +103,7 @@ mod tests {
     use super::generate_at;
 
     #[test]
-    fn assembles_index_viewers_and_downloads() {
+    fn assembles_index_and_viewers() {
         let temp = tempdir().unwrap();
         for year in [2025, 2026] {
             let directory = temp.path().join(year.to_string()).join("lf");
@@ -119,20 +117,20 @@ mod tests {
         let year_2025 = index.find("<h2>2025</h2>").unwrap();
         let year_2026 = index.find("<h2>2026</h2>").unwrap();
         assert!(year_2026 < year_2025);
-        assert!(index.contains("2026/lf.pdf"));
         assert!(index.contains("href=\"2026/index.html\""));
-        assert!(index.contains("data-download"));
+        assert!(!index.contains("download"));
 
         let viewer =
             fs::read_to_string(temp.path().join("public/2026/index.html")).unwrap();
         assert!(viewer.contains("src=\"./lf.pdf#view=FitH\""));
-        assert!(viewer.contains("download=\"2026-world-championship-limit-list.pdf\""));
+        assert!(!viewer.contains("<header"));
+        assert!(!viewer.contains("download"));
         assert_eq!(
             fs::read(temp.path().join("public/2025/lf.pdf")).unwrap(),
             b"pdf-2025"
         );
         assert!(temp.path().join("public/assets/site.css").is_file());
-        assert!(temp.path().join("public/assets/site.js").is_file());
+        assert!(!temp.path().join("public/assets/site.js").exists());
         assert!(temp.path().join("public/.nojekyll").is_file());
     }
 
