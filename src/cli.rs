@@ -9,6 +9,12 @@ pub(crate) struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub(crate) enum Command {
+    /// Run the complete limit-list build for selected or discovered years.
+    Build {
+        /// World Championship years; discovers all years when omitted.
+        #[arg(num_args = 0..)]
+        years: Vec<u16>,
+    },
     /// Resolve forbidden and limited card lists for one or more years.
     Lf {
         /// One or more World Championship years.
@@ -34,6 +40,26 @@ mod tests {
     use clap::Parser;
 
     use super::{Cli, Command};
+
+    #[test]
+    fn parses_build_subcommand_with_multiple_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "build", "2025", "2026"]).unwrap();
+
+        assert!(matches!(
+            cli.command,
+            Command::Build { years } if years == [2025, 2026]
+        ));
+    }
+
+    #[test]
+    fn allows_build_subcommand_without_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "build"]).unwrap();
+
+        assert!(matches!(
+            cli.command,
+            Command::Build { years } if years.is_empty()
+        ));
+    }
 
     #[test]
     fn parses_lf_subcommand_with_multiple_years() {
