@@ -35,6 +35,8 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
     let assets = staged.join("assets");
     fs::create_dir_all(&assets).context("failed to create staged site assets")?;
     fs::write(assets.join("site.css"), template::CSS).context("failed to write site stylesheet")?;
+    fs::write(assets.join("site.js"), template::DOWNLOAD_JS)
+        .context("failed to write site script")?;
     fs::write(staged.join(".nojekyll"), []).context("failed to write .nojekyll")?;
 
     let mut site_years = Vec::with_capacity(years.len());
@@ -118,17 +120,19 @@ mod tests {
         let year_2026 = index.find("<h2>2026</h2>").unwrap();
         assert!(year_2026 < year_2025);
         assert!(index.contains("2026/lf.pdf"));
-        assert!(index.contains("2026/"));
+        assert!(index.contains("href=\"2026/index.html\""));
+        assert!(index.contains("data-download"));
 
         let viewer =
             fs::read_to_string(temp.path().join("public/2026/index.html")).unwrap();
-        assert!(viewer.contains("data=\"./lf.pdf\""));
-        assert!(viewer.contains("href=\"./lf.pdf\" download"));
+        assert!(viewer.contains("src=\"./lf.pdf#view=FitH\""));
+        assert!(viewer.contains("download=\"2026-world-championship-limit-list.pdf\""));
         assert_eq!(
             fs::read(temp.path().join("public/2025/lf.pdf")).unwrap(),
             b"pdf-2025"
         );
         assert!(temp.path().join("public/assets/site.css").is_file());
+        assert!(temp.path().join("public/assets/site.js").is_file());
         assert!(temp.path().join("public/.nojekyll").is_file());
     }
 

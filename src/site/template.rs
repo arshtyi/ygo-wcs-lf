@@ -1,9 +1,10 @@
 use super::SiteYear;
 
 pub(super) const CSS: &str = r#":root {
+  color-scheme: dark;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f5f5f5;
-  color: #222;
+  background: #0d1218;
+  color: #dce5ee;
 }
 
 * {
@@ -12,7 +13,7 @@ pub(super) const CSS: &str = r#":root {
 
 body {
   margin: 0;
-  background: #f5f5f5;
+  background: #0d1218;
 }
 
 a {
@@ -52,9 +53,9 @@ h1 {
   justify-content: space-between;
   gap: 20px;
   padding: 18px;
-  border: 1px solid #ddd;
+  border: 1px solid #273442;
   border-radius: 8px;
-  background: #fff;
+  background: #141c25;
 }
 
 .year-card h2 {
@@ -63,7 +64,7 @@ h1 {
 }
 
 .meta {
-  color: #666;
+  color: #91a4b7;
   font-size: 0.9rem;
 }
 
@@ -78,26 +79,32 @@ h1 {
   justify-content: center;
   min-height: 38px;
   padding: 0 14px;
-  border: 1px solid #bbb;
+  border: 1px solid #40556a;
   border-radius: 6px;
-  background: #fff;
+  background: #141c25;
   text-decoration: none;
 }
 
 .button:hover {
-  background: #f0f0f0;
+  background: #1b2733;
 }
 
 .button.primary {
-  border-color: #222;
-  background: #222;
+  border-color: #3579a8;
+  background: #3579a8;
   color: #fff;
+}
+
+.button[aria-busy="true"] {
+  cursor: wait;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .viewer-body {
   height: 100vh;
   overflow: hidden;
-  background: #ddd;
+  background: #090d12;
 }
 
 .viewer-shell {
@@ -112,8 +119,8 @@ h1 {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  border-bottom: 1px solid #ddd;
-  background: #fff;
+  border-bottom: 1px solid #273442;
+  background: #111821;
 }
 
 .viewer-title {
@@ -130,7 +137,7 @@ h1 {
 }
 
 .back {
-  color: #666;
+  color: #8eb8d6;
   font-size: 0.8rem;
 }
 
@@ -139,11 +146,7 @@ h1 {
   width: 100%;
   height: 100%;
   border: 0;
-  background: #ddd;
-}
-
-.fallback {
-  padding: 24px;
+  background: #090d12;
 }
 
 @media (max-width: 560px) {
@@ -166,6 +169,39 @@ h1 {
 }
 "#;
 
+pub(super) const DOWNLOAD_JS: &str = r#"for (const link of document.querySelectorAll("[data-download]")) {
+  link.addEventListener("click", async (event) => {
+    event.preventDefault();
+    const label = link.textContent;
+    link.setAttribute("aria-busy", "true");
+    link.textContent = "下载中";
+
+    try {
+      const response = await fetch(link.href);
+      if (!response.ok) throw new Error(response.statusText);
+      const url = URL.createObjectURL(await response.blob());
+      const download = document.createElement("a");
+      download.href = url;
+      download.download = link.download;
+      document.body.append(download);
+      download.click();
+      download.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      const download = document.createElement("a");
+      download.href = link.href;
+      download.download = link.download;
+      document.body.append(download);
+      download.click();
+      download.remove();
+    } finally {
+      link.removeAttribute("aria-busy");
+      link.textContent = label;
+    }
+  });
+}
+"#;
+
 pub(super) fn index(years: &[SiteYear]) -> String {
     let cards = years
         .iter()
@@ -178,8 +214,8 @@ pub(super) fn index(years: &[SiteYear]) -> String {
           <p class="meta">OCG / TCG · {size}</p>
         </div>
         <div class="actions">
-          <a class="button primary" href="{year}/">查看</a>
-          <a class="button" href="{year}/lf.pdf" download>下载</a>
+          <a class="button primary" href="{year}/index.html">查看</a>
+          <a class="button" href="{year}/lf.pdf" download="{year}-world-championship-limit-list.pdf" data-download>下载</a>
         </div>
       </article>"#,
                 size = file_size(entry.bytes),
@@ -197,6 +233,7 @@ pub(super) fn index(years: &[SiteYear]) -> String {
   <meta name="description" content="游戏王世界锦标赛 OCG / TCG 禁限卡表">
   <title>游戏王世界赛禁限卡表</title>
   <link rel="stylesheet" href="assets/site.css">
+  <script defer src="assets/site.js"></script>
 </head>
 <body>
   <header class="hero shell">
@@ -222,6 +259,7 @@ pub(super) fn viewer(year: u16, bytes: u64) -> String {
   <meta name="description" content="{year} 游戏王世界锦标赛 OCG / TCG 禁限卡表">
   <title>{year} 世界赛禁限卡表</title>
   <link rel="stylesheet" href="../assets/site.css">
+  <script defer src="../assets/site.js"></script>
 </head>
 <body class="viewer-body">
   <main class="viewer-shell">
@@ -230,11 +268,9 @@ pub(super) fn viewer(year: u16, bytes: u64) -> String {
         <a class="back" href="../">全部年份</a>
         <h1>{year} 世界赛禁限卡表</h1>
       </div>
-      <a class="button primary" href="./lf.pdf" download>下载 · {size}</a>
+      <a class="button primary" href="./lf.pdf" download="{year}-world-championship-limit-list.pdf" data-download>下载 · {size}</a>
     </header>
-    <object class="document" data="./lf.pdf" type="application/pdf">
-      <p class="fallback">无法显示 PDF。<a href="./lf.pdf">打开文件</a></p>
-    </object>
+    <iframe class="document" src="./lf.pdf#view=FitH" title="{year} 世界赛禁限卡表"></iframe>
   </main>
 </body>
 </html>
