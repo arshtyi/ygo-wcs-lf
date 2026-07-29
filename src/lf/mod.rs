@@ -39,7 +39,9 @@ async fn run_year(year: u16, api: &ApiClient) -> Result<()> {
         bail!("no valid cards found in {}", input_path.display());
     }
 
-    let resolved = resolver::resolve(&parsed.cards, api).await;
+    let resolved = resolver::resolve(&parsed.cards, api)
+        .await
+        .with_context(|| format!("failed to resolve {}", input_path.display()))?;
 
     for diagnostic in &resolved.diagnostics {
         eprintln!(

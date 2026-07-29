@@ -1,6 +1,7 @@
 use std::collections::{BTreeSet, HashMap};
 
-use futures::{StreamExt, stream};
+use anyhow::{Context, Result};
+use futures::{StreamExt, TryStreamExt, stream};
 
 use super::{
     api::CardSearch,
@@ -28,7 +29,7 @@ pub(super) struct ResolvedList {
     pub(super) diagnostics: Vec<ResolveDiagnostic>,
 }
 
-pub(super) async fn resolve<S>(cards: &[CardEntry], search: &S) -> ResolvedList
+pub(super) async fn resolve<S>(cards: &[CardEntry], search: &S) -> Result<ResolvedList>
 where
     S: CardSearch,
 {
@@ -45,15 +46,15 @@ where
 
     let search_results = stream::iter(names)
         .map(|name| async move {
-            let result = search
+            let id = search
                 .search_id(&name)
                 .await
-                .map_err(|error| format!("{error:#}"));
-            (name, result)
+                .with_context(|| format!("failed to query card name `{name}`"))?;
+            Ok::<_, anyhow::Error>((name, id))
         })
         .buffer_unordered(MAX_CONCURRENT_REQUESTS)
-        .collect::<HashMap<_, _>>()
-        .await;
+        .try_collect::<HashMap<_, _>>()
+        .await?;
 
     let mut resolved = Vec::with_capacity(cards.len());
     let mut diagnostics = Vec::new();
@@ -72,16 +73,16 @@ where
         }
     }
 
-    ResolvedList {
+    Ok(ResolvedList {
         cards: resolved,
         diagnostics,
-    }
+    })
 }
 
 fn resolve_card(
     card: &CardEntry,
-    search_results: &HashMap<String, Result<Option<u32>, String>>,
-) -> Result<u32, String> {
+    search_results: &HashMap<String, Option<u32>>,
+) -> std::result::Result<u32, String> {
     if let Some(id) = card.explicit_id {
         return Ok(id);
     }
@@ -109,14 +110,11 @@ fn resolve_card(
 fn resolved_name(
     language: &str,
     name: &str,
-    search_results: &HashMap<String, Result<Option<u32>, String>>,
-) -> Result<u32, String> {
+    search_results: &HashMap<String, Option<u32>>,
+) -> std::result::Result<u32, String> {
     match search_results.get(name) {
-        Some(Ok(Some(id))) => Ok(*id),
-        Some(Ok(None)) => Err(format!("no card found for {language} name `{name}`")),
-        Some(Err(error)) => Err(format!(
-            "failed to query {language} name `{name}`: {error}"
-        )),
+        Some(Some(id)) => Ok(*id),
+        Some(None) => Err(format!("no card found for {language} name `{name}`")),
         None => Err(format!("missing query result for {language} name `{name}`")),
     }
 }
@@ -176,7 +174,7 @@ mod tests {
             card(Some("増殖するＧ"), None, None, 4),
         ];
 
-        let resolved = resolve(&cards, &search).await;
+        let resolved = resolve(&cards, &search).await.unwrap();
 
         assert_eq!(
             resolved.cards,
@@ -205,7 +203,7 @@ mod tests {
             card(None, Some("Shared"), None, 3),
         ];
 
-        let resolved = resolve(&cards, &search).await;
+        let resolved = resolve(&cards, &search).await.unwrap();
 
         assert_eq!(
             resolved.cards.iter().map(|card| card.id).collect::<Vec<_>>(),
@@ -215,20 +213,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn skips_mismatches_missing_results_and_request_failures() {
+    async fn skips_mismatches_and_missing_results() {
         let search = fake_search([
             ("Japanese", Answer::Found(1)),
             ("English", Answer::Found(2)),
             ("Missing", Answer::Missing),
-            ("Failed", Answer::Failed),
         ]);
         let cards = [
             card(Some("Japanese"), Some("English"), None, 10),
             card(None, Some("Missing"), None, 11),
-            card(Some("Failed"), None, None, 12),
         ];
 
-        let resolved = resolve(&cards, &search).await;
+        let resolved = resolve(&cards, &search).await.unwrap();
 
         assert!(resolved.cards.is_empty());
         assert_eq!(
@@ -242,11 +238,20 @@ mod tests {
                     line_number: 11,
                     message: "no card found for English name `Missing`".to_owned(),
                 },
-                ResolveDiagnostic {
-                    line_number: 12,
-                    message: "failed to query Japanese name `Failed`: offline".to_owned(),
-                },
             ]
+        );
+    }
+
+    #[tokio::test]
+    async fn fails_on_request_errors() {
+        let search = fake_search([("Failed", Answer::Failed)]);
+        let cards = [card(Some("Failed"), None, None, 12)];
+
+        let error = resolve(&cards, &search).await.unwrap_err();
+
+        assert!(
+            format!("{error:#}").contains("failed to query card name `Failed`: offline"),
+            "unexpected error: {error:#}"
         );
     }
 
