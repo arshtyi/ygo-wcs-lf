@@ -1,0 +1,6 @@
+*.pdf
+*.json
+/target
+/vendor
+/build
+/public
