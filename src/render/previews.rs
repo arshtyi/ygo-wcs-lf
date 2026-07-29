@@ -2,7 +2,6 @@ use std::{
     collections::HashSet,
     fs,
     path::{Path, PathBuf},
-    process::Command,
 };
 
 use anyhow::{Context, Result, bail};
@@ -10,7 +9,8 @@ use tempfile::Builder;
 
 use crate::limits::YearLimits;
 
-const TYPST: &str = "typst";
+use super::typst;
+
 const PREVIEWS: &str = "build/previews";
 const TYPST_YGO: &str = "vendor/typst-ygo";
 
@@ -41,15 +41,7 @@ pub(super) fn compile(limit_lists: &[YearLimits], ppi: u16) -> Result<()> {
     fs::create_dir_all(&staged).context("failed to create staged preview directory")?;
     let output_pattern = staged.join("page-{0p}.png");
 
-    let mut command = Command::new(TYPST);
-    command
-        .arg("compile")
-        .arg("--root")
-        .arg(&project_root);
-    for font_path in font_paths(&workspace)? {
-        command.arg("--font-path").arg(font_path);
-    }
-    let status = command
+    let status = typst::command(&project_root)?
         .arg("--ppi")
         .arg(ppi.to_string())
         .arg(&source)
@@ -131,19 +123,6 @@ fn page_number(path: &Path) -> Result<u32> {
         .context("unexpected preview filename")?
         .parse()
         .with_context(|| format!("invalid preview page number in {file_name}"))
-}
-
-fn font_paths(workspace: &Path) -> Result<[PathBuf; 2]> {
-    let paths = [
-        workspace.join("assets/ot/font"),
-        workspace.join("assets/rd/font"),
-    ];
-    for path in &paths {
-        if !path.is_dir() {
-            bail!("required Typst font directory is missing: {}", path.display());
-        }
-    }
-    Ok(paths)
 }
 
 fn validate_workspace(workspace: &Path) -> Result<()> {

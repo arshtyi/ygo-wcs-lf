@@ -34,6 +34,10 @@ impl YearLimits {
             .with_context(|| format!("failed to write {}", self.path.display()))
     }
 
+    pub(crate) fn year(&self) -> u16 {
+        self.year
+    }
+
     pub(crate) fn ids(&self) -> impl Iterator<Item = u32> + '_ {
         self.groups
             .iter()
