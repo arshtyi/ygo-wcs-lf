@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 
-use crate::{lf, prepare, render, years};
+use crate::{lf, prepare, render, site, years};
 
 pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
     let root = std::env::current_dir().context("failed to resolve project root")?;
@@ -12,7 +12,8 @@ pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
     );
     lf::run(years.clone()).await?;
     prepare::run(years.clone()).await?;
-    render::run(years)?;
+    render::run(years.clone())?;
+    site::generate(&years)?;
     Ok(())
 }
 

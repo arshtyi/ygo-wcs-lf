@@ -33,6 +33,12 @@ pub(crate) enum Command {
         #[arg(required = true, num_args = 1..)]
         years: Vec<u16>,
     },
+    /// Assemble a static site from rendered limit-list PDFs.
+    Site {
+        /// One or more World Championship years.
+        #[arg(required = true, num_args = 1..)]
+        years: Vec<u16>,
+    },
 }
 
 #[cfg(test)]
@@ -93,6 +99,16 @@ mod tests {
         assert!(matches!(
             cli.command,
             Command::Render { years } if years == [2025, 2026]
+        ));
+    }
+
+    #[test]
+    fn parses_site_subcommand_with_multiple_years() {
+        let cli = Cli::try_parse_from(["ygo-wcs-lf", "site", "2025", "2026"]).unwrap();
+
+        assert!(matches!(
+            cli.command,
+            Command::Site { years } if years == [2025, 2026]
         ));
     }
 }

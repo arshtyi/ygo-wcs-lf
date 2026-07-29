@@ -4,6 +4,7 @@ mod lf;
 mod limits;
 mod prepare;
 mod render;
+mod site;
 mod years;
 
 use anyhow::Result;
@@ -19,5 +20,6 @@ async fn main() -> Result<()> {
         Command::Lf { years } => lf::run(years).await,
         Command::Prepare { years } => prepare::run(years).await,
         Command::Render { years } => render::run(years),
+        Command::Site { years } => site::generate(&years),
     }
 }
