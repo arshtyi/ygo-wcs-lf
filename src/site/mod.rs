@@ -10,6 +10,7 @@ use anyhow::{Context, Result, bail};
 use tempfile::Builder;
 
 const OUTPUT: &str = "public";
+const STYLESHEET: &str = "site/assets/site.css";
 
 struct SiteYear {
     year: u16,
@@ -34,7 +35,9 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
     let staged = temp.path().join(OUTPUT);
     let assets = staged.join("assets");
     fs::create_dir_all(&assets).context("failed to create staged site assets")?;
-    fs::write(assets.join("site.css"), template::CSS).context("failed to write site stylesheet")?;
+    let stylesheet = root.join(STYLESHEET);
+    fs::copy(&stylesheet, assets.join("site.css"))
+        .with_context(|| format!("failed to copy {}", stylesheet.display()))?;
     fs::write(staged.join(".nojekyll"), []).context("failed to write .nojekyll")?;
 
     let mut site_years = Vec::with_capacity(years.len());
@@ -105,6 +108,9 @@ mod tests {
     #[test]
     fn assembles_index_and_viewers() {
         let temp = tempdir().unwrap();
+        let stylesheet = temp.path().join("site/assets/site.css");
+        fs::create_dir_all(stylesheet.parent().unwrap()).unwrap();
+        fs::write(&stylesheet, "body { color: white; }").unwrap();
         for year in [2025, 2026] {
             let directory = temp.path().join(year.to_string()).join("lf");
             fs::create_dir_all(&directory).unwrap();
@@ -130,6 +136,10 @@ mod tests {
             b"pdf-2025"
         );
         assert!(temp.path().join("public/assets/site.css").is_file());
+        assert_eq!(
+            fs::read_to_string(temp.path().join("public/assets/site.css")).unwrap(),
+            "body { color: white; }"
+        );
         assert!(!temp.path().join("public/assets/site.js").exists());
         assert!(temp.path().join("public/.nojekyll").is_file());
     }
