@@ -165,12 +165,7 @@ mod tests {
             ("増殖するＧ", Answer::Found(23_427_709)),
         ]);
         let cards = [
-            card(
-                Some("青眼の白龍"),
-                Some("Blue-Eyes White Dragon"),
-                None,
-                3,
-            ),
+            card(Some("青眼の白龍"), Some("Blue-Eyes White Dragon"), None, 3),
             card(Some("増殖するＧ"), None, None, 4),
         ];
 
@@ -206,7 +201,11 @@ mod tests {
         let resolved = resolve(&cards, &search).await.unwrap();
 
         assert_eq!(
-            resolved.cards.iter().map(|card| card.id).collect::<Vec<_>>(),
+            resolved
+                .cards
+                .iter()
+                .map(|card| card.id)
+                .collect::<Vec<_>>(),
             [42, 7, 7]
         );
         assert_eq!(*search.calls.lock().unwrap(), ["Shared"]);

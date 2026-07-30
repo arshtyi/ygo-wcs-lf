@@ -11,12 +11,10 @@ use super::{
     download::Downloader,
 };
 
-const TYPST_YGO_URL: &str =
-    "https://github.com/arshtyi/typst-ygo/archive/refs/heads/main.tar.gz";
+const TYPST_YGO_URL: &str = "https://github.com/arshtyi/typst-ygo/archive/refs/heads/main.tar.gz";
 const ASSETS_URL: &str =
     "https://github.com/arshtyi/ygo-assets/releases/download/latest/assets.tar.xz";
-const OT_CARDS_URL: &str =
-    "https://github.com/arshtyi/ygo-cards/releases/download/latest/ot.json";
+const OT_CARDS_URL: &str = "https://github.com/arshtyi/ygo-cards/releases/download/latest/ot.json";
 const WORKSPACE: &str = "vendor/typst-ygo";
 
 pub(super) async fn assemble(downloader: &Downloader) -> Result<PathBuf> {
@@ -24,8 +22,7 @@ pub(super) async fn assemble(downloader: &Downloader) -> Result<PathBuf> {
     let parent = destination
         .parent()
         .context("workspace destination has no parent")?;
-    fs::create_dir_all(parent)
-        .with_context(|| format!("failed to create {}", parent.display()))?;
+    fs::create_dir_all(parent).with_context(|| format!("failed to create {}", parent.display()))?;
     let temp = Builder::new()
         .prefix(".ygo-wcs-lf-")
         .tempdir_in(parent)
@@ -108,10 +105,7 @@ fn single_directory(path: &Path) -> Result<PathBuf> {
     }
 
     if directories.len() != 1 || has_files {
-        bail!(
-            "expected one archive root directory in {}",
-            path.display()
-        );
+        bail!("expected one archive root directory in {}", path.display());
     }
 
     Ok(directories.remove(0))
@@ -185,9 +179,8 @@ fn install(staged: &Path, destination: &Path, temp: &Path) -> Result<()> {
         if had_previous {
             let _ = fs::rename(&backup, destination);
         }
-        return Err(error).with_context(|| {
-            format!("failed to install workspace at {}", destination.display())
-        });
+        return Err(error)
+            .with_context(|| format!("failed to install workspace at {}", destination.display()));
     }
 
     Ok(())
@@ -233,11 +226,7 @@ mod tests {
         let staged = temp.path().join("staged");
         fs::create_dir_all(previous.join("assets/ot/images")).unwrap();
         fs::create_dir_all(staged.join("assets/ot/images")).unwrap();
-        fs::write(
-            previous.join("assets/ot/images/123.jpg"),
-            [0xff, 0xd8],
-        )
-        .unwrap();
+        fs::write(previous.join("assets/ot/images/123.jpg"), [0xff, 0xd8]).unwrap();
 
         preserve_center_images(&previous, &staged).unwrap();
 

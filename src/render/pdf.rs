@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    path::Path,
-};
+use std::{fs, path::Path};
 
 use anyhow::{Context, Result, bail};
 use tempfile::Builder;
@@ -70,8 +67,7 @@ fn install_pdf(staged: &Path, destination: &Path, temp: &Path) -> Result<()> {
         if had_previous {
             let _ = fs::rename(&backup, destination);
         }
-        return Err(error)
-            .with_context(|| format!("failed to install {}", destination.display()));
+        return Err(error).with_context(|| format!("failed to install {}", destination.display()));
     }
 
     Ok(())

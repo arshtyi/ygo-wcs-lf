@@ -1,14 +1,14 @@
-use std::{
-    collections::BTreeSet,
-    fs,
-    path::Path,
-};
+use std::{collections::BTreeSet, fs, path::Path};
 
 use anyhow::{Context, Result, bail};
 
 pub(crate) fn resolve(root: &Path, years: Vec<u16>) -> Result<Vec<u16>> {
     if !years.is_empty() {
-        return Ok(years.into_iter().collect::<BTreeSet<_>>().into_iter().collect());
+        return Ok(years
+            .into_iter()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect());
     }
 
     discover(root)

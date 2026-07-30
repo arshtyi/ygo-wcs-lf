@@ -1,10 +1,6 @@
 mod template;
 
-use std::{
-    collections::BTreeSet,
-    fs,
-    path::Path,
-};
+use std::{collections::BTreeSet, fs, path::Path};
 
 use anyhow::{Context, Result, bail};
 use tempfile::Builder;
@@ -55,11 +51,8 @@ fn generate_at(root: &Path, years: &[u16]) -> Result<()> {
             .with_context(|| format!("failed to create site directory for {year}"))?;
         fs::copy(&source, year_directory.join("lf.pdf"))
             .with_context(|| format!("failed to copy limit-list PDF for {year}"))?;
-        fs::write(
-            year_directory.join("index.html"),
-            templates.viewer(year)?,
-        )
-        .with_context(|| format!("failed to write site viewer for {year}"))?;
+        fs::write(year_directory.join("index.html"), templates.viewer(year)?)
+            .with_context(|| format!("failed to write site viewer for {year}"))?;
         site_years.push(SiteYear {
             year,
             bytes: metadata.len(),
@@ -100,10 +93,7 @@ fn install(staged: &Path, destination: &Path, temp: &Path) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        fs,
-        path::Path,
-    };
+    use std::{fs, path::Path};
 
     use tempfile::tempdir;
 
@@ -128,8 +118,7 @@ mod tests {
         assert!(index.contains("href=\"2026/index.html\""));
         assert!(!index.contains("download"));
 
-        let viewer =
-            fs::read_to_string(temp.path().join("public/2026/index.html")).unwrap();
+        let viewer = fs::read_to_string(temp.path().join("public/2026/index.html")).unwrap();
         assert!(viewer.contains("src=\"./lf.pdf#zoom=100\""));
         assert!(!viewer.contains("<header"));
         assert!(!viewer.contains("download"));

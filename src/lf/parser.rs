@@ -32,12 +32,7 @@ pub(super) fn parse(source: &str) -> ParsedList {
         }
 
         if let Some(marker) = line.strip_prefix("///") {
-            parse_marker(
-                marker.trim(),
-                line_number,
-                &mut section,
-                &mut diagnostics,
-            );
+            parse_marker(marker.trim(), line_number, &mut section, &mut diagnostics);
             continue;
         }
 

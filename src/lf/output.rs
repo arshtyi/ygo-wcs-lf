@@ -63,13 +63,7 @@ mod tests {
 
         let json: serde_json::Value = serde_json::from_slice(&serialize(&cards).unwrap()).unwrap();
 
-        assert_eq!(
-            json,
-            json!([
-                [[1, 7], [2], [3]],
-                [[4], [5], [6]],
-            ])
-        );
+        assert_eq!(json, json!([[[1, 7], [2], [3]], [[4], [5], [6]],]));
     }
 
     fn resolved(region: Region, restriction: Restriction, id: u32) -> ResolvedCard {
