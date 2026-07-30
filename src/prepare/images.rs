@@ -75,7 +75,7 @@ pub(super) async fn fetch(
             .collect::<Vec<_>>()
             .join("\n");
         bail!(
-            "{} center image download(s) failed:\n{details}",
+            "{} center image preparation(s) failed:\n{details}",
             failures.len()
         );
     }
