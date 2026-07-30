@@ -8,10 +8,10 @@ use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use self::api::ApiClient;
+use self::api::{ApiClient, CachedSearch, CardSearch};
 
 pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
-    let api = ApiClient::new()?;
+    let api = CachedSearch::load(ApiClient::new()?, crate::cache::path("card-names.json"))?;
 
     for year in years {
         run_year(year, &api).await?;
@@ -20,7 +20,10 @@ pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
     Ok(())
 }
 
-async fn run_year(year: u16, api: &ApiClient) -> Result<()> {
+async fn run_year<S>(year: u16, api: &S) -> Result<()>
+where
+    S: CardSearch,
+{
     let input_path = PathBuf::from(year.to_string()).join("data/lf.list");
     let source = fs::read_to_string(&input_path)
         .with_context(|| format!("failed to read {}", input_path.display()))?;
