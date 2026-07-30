@@ -67,7 +67,11 @@ pub(super) fn compile(limit_lists: &[YearLimits], ppi: u16) -> Result<()> {
             .with_context(|| format!("failed to name preview for card {identifier}"))?;
     }
 
-    install_previews(&temp.path().join("previews"), &project_root.join(PREVIEWS), temp.path())?;
+    install_previews(
+        &temp.path().join("previews"),
+        &project_root.join(PREVIEWS),
+        temp.path(),
+    )?;
     println!(
         "rendered {} card previews at {ppi} PPI to {PREVIEWS}/ot",
         identifiers.len()
@@ -147,10 +151,7 @@ fn install_previews(staged: &Path, destination: &Path, temp: &Path) -> Result<()
 
     if had_previous {
         fs::rename(destination, &backup).with_context(|| {
-            format!(
-                "failed to move existing previews {}",
-                destination.display()
-            )
+            format!("failed to move existing previews {}", destination.display())
         })?;
     }
 
@@ -175,9 +176,10 @@ mod tests {
     fn generates_ot_card_source() {
         let source = typst_source(&[89_631_139, 23_427_709]);
 
-        assert!(source.contains(
-            "#import \"/vendor/typst-ygo/lib/mod.typ\": ot_card_by_id, ot_card_data"
-        ));
+        assert!(
+            source
+                .contains("#import \"/vendor/typst-ygo/lib/mod.typ\": ot_card_by_id, ot_card_data")
+        );
         assert!(source.contains("#let ids = (89631139, 23427709,)"));
         assert!(source.contains("ot_card_by_id(id, cards: cards)"));
     }

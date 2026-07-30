@@ -19,7 +19,11 @@ pub(super) struct Downloader {
 impl Downloader {
     pub(super) fn new() -> Result<Self> {
         let client = reqwest::Client::builder()
-            .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!(
+                env!("CARGO_PKG_NAME"),
+                "/",
+                env!("CARGO_PKG_VERSION")
+            ))
             .connect_timeout(CONNECT_TIMEOUT)
             .read_timeout(READ_TIMEOUT)
             .build()

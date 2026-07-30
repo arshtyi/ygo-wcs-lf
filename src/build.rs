@@ -37,6 +37,9 @@ mod tests {
             .unwrap();
         }
 
-        assert_eq!(years::resolve(temp.path(), Vec::new()).unwrap(), [2025, 2026]);
+        assert_eq!(
+            years::resolve(temp.path(), Vec::new()).unwrap(),
+            [2025, 2026]
+        );
     }
 }

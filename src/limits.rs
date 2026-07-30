@@ -39,11 +39,7 @@ impl YearLimits {
     }
 
     pub(crate) fn ids(&self) -> impl Iterator<Item = u32> + '_ {
-        self.groups
-            .iter()
-            .flatten()
-            .flatten()
-            .copied()
+        self.groups.iter().flatten().flatten().copied()
     }
 }
 
@@ -88,11 +84,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let limits_path = temp.path().join("lf.json");
         let cards_path = temp.path().join("ot.json");
-        fs::write(
-            &limits_path,
-            "[[[3,1,2],[],[]],[[4,3,2,1],[],[]]]",
-        )
-        .unwrap();
+        fs::write(&limits_path, "[[[3,1,2],[],[]],[[4,3,2,1],[],[]]]").unwrap();
         fs::write(
             &cards_path,
             r#"[
@@ -113,10 +105,7 @@ mod tests {
             serde_json::from_slice(&fs::read(limits_path).unwrap()).unwrap();
         assert_eq!(
             actual,
-            serde_json::json!([
-                [[2, 1, 3], [], []],
-                [[2, 1, 3, 4], [], []],
-            ])
+            serde_json::json!([[[2, 1, 3], [], []], [[2, 1, 3, 4], [], []],])
         );
     }
 

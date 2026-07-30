@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    fs,
-    path::Path,
-};
+use std::{collections::HashMap, fs, path::Path};
 
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
@@ -52,8 +48,8 @@ impl CardDatabase {
     }
 
     fn from_json(json: &[u8]) -> Result<Self> {
-        let cards = serde_json::from_slice::<Vec<Card>>(json)
-            .context("expected a JSON array of cards")?;
+        let cards =
+            serde_json::from_slice::<Vec<Card>>(json).context("expected a JSON array of cards")?;
         let mut index = HashMap::with_capacity(cards.len());
 
         for card in cards {

@@ -50,10 +50,7 @@ pub(super) fn extract(
                 .unpack(&target)
                 .with_context(|| format!("failed to extract {}", relative.display()))?;
         } else {
-            bail!(
-                "archive entry type is not allowed: {}",
-                relative.display()
-            );
+            bail!("archive entry type is not allowed: {}", relative.display());
         }
     }
 

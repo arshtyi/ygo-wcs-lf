@@ -1,7 +1,4 @@
-use std::{
-    path::Path,
-    process::Command,
-};
+use std::{path::Path, process::Command};
 
 use anyhow::{Result, bail};
 
@@ -23,10 +20,7 @@ pub(super) fn command(project_root: &Path) -> Result<Command> {
     }
 
     let mut command = Command::new(TYPST);
-    command
-        .arg("compile")
-        .arg("--root")
-        .arg(project_root);
+    command.arg("compile").arg("--root").arg(project_root);
     for path in font_paths {
         command.arg("--font-path").arg(path);
     }
