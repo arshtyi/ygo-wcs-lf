@@ -32,12 +32,11 @@ enum ImageKind {
 
 pub(super) async fn fetch(
     downloader: &Downloader,
-    workspace: &Path,
+    images_directory: &Path,
     cards: &CardDatabase,
     limit_lists: &[YearLimits],
 ) -> Result<()> {
     let image_ids = required_image_ids(limit_lists.iter().flat_map(YearLimits::ids), cards)?;
-    let images_directory = workspace.join("assets/ot/images");
     let cache_directory = crate::cache::path("card-images");
     let results = stream::iter(image_ids.iter().copied())
         .map(|image_id| {

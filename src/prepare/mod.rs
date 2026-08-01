@@ -1,25 +1,26 @@
-mod archive;
 pub(crate) mod cards;
 mod download;
 mod images;
-mod workspace;
+mod resources;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
-use crate::limits;
+use crate::{limits, upstream::Upstream};
 
 use self::download::Downloader;
 
 pub(crate) async fn run(years: Vec<u16>) -> Result<()> {
+    let project_root = std::env::current_dir().context("failed to resolve project root")?;
+    let upstream = Upstream::at(&project_root);
     let mut limit_lists = limits::load_years(&years)?;
     let downloader = Downloader::new()?;
-    let workspace = workspace::assemble(&downloader).await?;
-    let cards = cards::CardDatabase::load(&workspace.join("assets/ot/card/ot.json"))?;
+    resources::prepare(&downloader, &upstream).await?;
+    let cards = cards::CardDatabase::load(&upstream.card_data())?;
 
     for limits in &mut limit_lists {
         limits.sort(&cards)?;
     }
-    images::fetch(&downloader, &workspace, &cards, &limit_lists).await?;
+    images::fetch(&downloader, &upstream.center_images(), &cards, &limit_lists).await?;
     for limits in &limit_lists {
         limits.write()?;
     }

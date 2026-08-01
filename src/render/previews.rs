@@ -8,11 +8,11 @@ use anyhow::{Context, Result, bail};
 use tempfile::Builder;
 
 use crate::limits::YearLimits;
+use crate::upstream::{TEMPLATE_DIRECTORY, Upstream};
 
 use super::typst;
 
 const PREVIEWS: &str = "build/previews";
-const TYPST_YGO: &str = "vendor/typst-ygo";
 
 pub(super) fn compile(limit_lists: &[YearLimits], ppi: u16) -> Result<()> {
     if !(36..=144).contains(&ppi) {
@@ -25,8 +25,7 @@ pub(super) fn compile(limit_lists: &[YearLimits], ppi: u16) -> Result<()> {
     }
 
     let project_root = std::env::current_dir().context("failed to resolve project root")?;
-    let workspace = project_root.join(TYPST_YGO);
-    validate_workspace(&workspace)?;
+    Upstream::at(&project_root).validate_ready()?;
 
     let build = project_root.join("build");
     fs::create_dir_all(&build).context("failed to create build directory")?;
@@ -96,10 +95,14 @@ fn typst_source(identifiers: &[u32]) -> String {
         .join(", ");
 
     format!(
-        "#import \"/vendor/typst-ygo/lib/mod.typ\": ot_card_by_id, ot_card_data\n\n\
-         #let cards = ot_card_data()\n\
+        "#import \"/{TEMPLATE_DIRECTORY}/lib/mod.typ\": ot-card, ot-cards\n\n\
+         #set page(width: auto, height: auto, margin: 0pt)\n\n\
+         #let cards = ot-cards()\n\
          #let ids = ({values},)\n\n\
-         #for id in ids {{ ot_card_by_id(id, cards: cards) }}\n"
+         #for id in ids {{\n\
+           ot-card(id, cards: cards)\n\
+           pagebreak(weak: true)\n\
+         }}\n"
     )
 }
 
@@ -127,22 +130,6 @@ fn page_number(path: &Path) -> Result<u32> {
         .context("unexpected preview filename")?
         .parse()
         .with_context(|| format!("invalid preview page number in {file_name}"))
-}
-
-fn validate_workspace(workspace: &Path) -> Result<()> {
-    let required = [
-        workspace.join("lib/mod.typ"),
-        workspace.join("assets/ot/card/ot.json"),
-    ];
-    for path in required {
-        if !path.is_file() {
-            bail!(
-                "required typst-ygo file is missing: {}; run `prepare` first",
-                path.display()
-            );
-        }
-    }
-    Ok(())
 }
 
 fn install_previews(staged: &Path, destination: &Path, temp: &Path) -> Result<()> {
@@ -176,12 +163,11 @@ mod tests {
     fn generates_ot_card_source() {
         let source = typst_source(&[89_631_139, 23_427_709]);
 
-        assert!(
-            source
-                .contains("#import \"/vendor/typst-ygo/lib/mod.typ\": ot_card_by_id, ot_card_data")
-        );
+        assert!(source.contains("#import \"/vendor/typst-ygo/lib/mod.typ\": ot-card, ot-cards"));
+        assert!(source.contains("#set page(width: auto, height: auto, margin: 0pt)"));
         assert!(source.contains("#let ids = (89631139, 23427709,)"));
-        assert!(source.contains("ot_card_by_id(id, cards: cards)"));
+        assert!(source.contains("ot-card(id, cards: cards)"));
+        assert!(source.contains("pagebreak(weak: true)"));
     }
 
     #[test]

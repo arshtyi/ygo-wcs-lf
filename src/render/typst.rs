@@ -2,14 +2,14 @@ use std::{path::Path, process::Command};
 
 use anyhow::{Result, bail};
 
+use crate::upstream::Upstream;
+
 const TYPST: &str = "typst";
 
 pub(super) fn command(project_root: &Path) -> Result<Command> {
-    let workspace = project_root.join("vendor/typst-ygo");
-    let font_paths = [
-        workspace.join("assets/ot/font"),
-        workspace.join("assets/rd/font"),
-    ];
+    let upstream = Upstream::at(project_root);
+    upstream.validate_ready()?;
+    let font_paths = upstream.font_directories();
     for path in &font_paths {
         if !path.is_dir() {
             bail!(

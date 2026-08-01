@@ -6,6 +6,7 @@ mod limits;
 mod prepare;
 mod render;
 mod site;
+mod upstream;
 mod years;
 
 use anyhow::Result;

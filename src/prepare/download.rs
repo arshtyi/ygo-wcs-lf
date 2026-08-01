@@ -2,6 +2,7 @@ use std::{path::Path, time::Duration};
 
 use anyhow::{Context, Result, anyhow};
 use futures::StreamExt;
+use tempfile::NamedTempFile;
 use tokio::{
     fs::{self, File},
     io::AsyncWriteExt,
@@ -50,20 +51,30 @@ impl Downloader {
                 .await
                 .with_context(|| format!("failed to create {}", parent.display()))?;
         }
+        let parent = destination
+            .parent()
+            .context("download destination has no parent")?;
 
         let mut last_error = None;
 
         for attempt in 1..=ATTEMPTS {
-            let result = match self.download_once(url, destination).await {
-                Ok(()) => validate(destination),
+            let temporary = NamedTempFile::new_in(parent)
+                .context("failed to create temporary download")?
+                .into_temp_path();
+            let result = match self.download_once(url, &temporary).await {
+                Ok(()) => validate(&temporary),
                 Err(error) => Err(error),
             };
 
             match result {
-                Ok(()) => return Ok(()),
+                Ok(()) => {
+                    temporary
+                        .persist(destination)
+                        .with_context(|| format!("failed to replace {}", destination.display()))?;
+                    return Ok(());
+                }
                 Err(error) => {
                     last_error = Some(error);
-                    let _ = fs::remove_file(destination).await;
                     if attempt < ATTEMPTS {
                         sleep(Duration::from_secs(u64::from(attempt))).await;
                     }

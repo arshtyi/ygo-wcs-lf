@@ -2,5 +2,6 @@
 *.json
 /.cache
 /target
+/vendor
 /build
 /public
