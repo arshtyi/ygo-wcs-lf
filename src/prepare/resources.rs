@@ -4,7 +4,7 @@ use crate::upstream::Upstream;
 
 use super::download::Downloader;
 
-const OT_CARDS_URL: &str = "https://github.com/arshtyi/ygo-cards/releases/download/latest/ot.json";
+const OT_CARDS_URL: &str = "https://github.com/arshtyi/ygo-cards/releases/latest/download/ot.json";
 
 pub(super) async fn prepare(downloader: &Downloader, upstream: &Upstream) -> Result<()> {
     upstream.prepare_layout()?;
